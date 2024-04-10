@@ -1,0 +1,12 @@
+
+    {
+        "name": "coinmaker",
+        "version": "1.0.0",
+        "description": "A modularized Bitcoin RPC mining script",
+        "main": "main.js",
+        "scripts": {
+          "start": "node main.js"
+        },
+        "dependencies": {}
+      }
+      
