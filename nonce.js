@@ -1,7 +1,7 @@
 // Nonce module
 
 // Import required dependencies
-const { createCoinbaseTransaction } = require('./blockfunctions'); // Import the block_functions module
+const { createCoinbaseTransaction } = require('./blockfunctions'); // Import the blockfunctions module
 const { getBlockTemplate, getBits, getTarget } = require('./rpc_connection'); // Import the rpc_connection module
 const crypto = require('crypto');
 
@@ -9,6 +9,12 @@ const crypto = require('crypto');
 class Nonce {
     constructor(rpcConnection) {
         this.rpcConnection = rpcConnection;
+    }
+
+    async mineBlock(tracker) {
+        // Other code...
+        const rewardAddress = 'bc1qafkd8uluq6jvp0zaqpk3rnzmqwqrmmtce9v5td'; // Set reward address here
+        const coinbaseTx = createCoinbaseTransaction(outputAddress, rewardAddress, rewardAmount);
     }
 
     async calculateNonceRange() {

@@ -1,44 +1,54 @@
-class Tracker {
-    constructor() {
-        this.startTime = null;
-        this.progressCallback = null;
-        this.statusCallback = null;
-    }
+const Tracker = require('/src/tracker');
+const MiningAnalytics = require('/src/metrics');
+const Nonce = require('/src/nonce');
 
-    startTracking() {
-        this.startTime = new Date();
-        console.log('Mining process started at:', this.startTime);
-    }
+async function mineBitcoin() {
+    try {
+        // Initialize Tracker
+        const tracker = new Tracker();
+        
+        // Start tracking
+        tracker.startTracking();
 
-    endTracking() {
-        const endTime = new Date();
-        console.log('Mining process ended at:', endTime);
-        const elapsedTime = endTime - this.startTime;
-        console.log('Total mining time:', elapsedTime / 1000, 'seconds');
-    }
+        // Monitoring and Analytics Module
 
-    setProgressCallback(callback) {
-        this.progressCallback = callback;
-    }
+        // Instantiate MiningAnalytics
+        const miningAnalytics = new MiningAnalytics();
 
-    setStatusCallback(callback) {
-        this.statusCallback = callback;
-    }
+        // Example usage: Update monitoring data
+        miningAnalytics.updateHashRate(1500);
+        miningAnalytics.updateShareStats(10, 2);
 
-    trackProgress(current, total) {
-        const progressPercentage = (current / total) * 100;
-        console.log('Mining progress:', progressPercentage.toFixed(2) + '%');
-        if (this.progressCallback) {
-            this.progressCallback(progressPercentage);
-        }
-    }
+        // Example usage: Log monitoring data and trigger alerts
+        miningAnalytics.logMonitoringData();
+        miningAnalytics.triggerAlerts();
 
-    logStatus(statusMessage) {
-        console.log(statusMessage);
-        if (this.statusCallback) {
-            this.statusCallback(statusMessage);
-        }
+        // Perform mining tasks
+        const block = await Nonce.mineBlock(rpcConnection, tracker);
+
+        // End tracking
+        tracker.endTracking();
+
+        // Log successful mining status
+        tracker.logStatus("Mining process completed successfully");
+
+        return block;
+    } catch (error) {
+        // Log error
+        console.error("Error occurred during mining:", error);
+
+        // End tracking
+        tracker.endTracking();
+
+        // Log failure status
+        tracker.logStatus("Mining process failed");
+
+        // Handle error
+        throw error;
     }
 }
 
-module.exports = Tracker;
+// Export the mineBitcoin function
+module.exports = {
+    mineBitcoin
+};
