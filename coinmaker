@@ -350,80 +350,258 @@ class Transaction {
 }
 
 // Define the TransactionPool class
-class TransactionPool {
+// Define the Block class
+class Block {
     /**
-     * Create a new instance of TransactionPool.
+     * Create a new block.
+     * @param {string} previousHash - The hash of the previous block.
+     * @param {Array} transactions - The list of transactions included in the block.
      */
-    constructor() {
-        this.transactions = []; // Array to store pending transactions
-        this.maxPoolSize = 1000; // Maximum allowed size of the transaction pool
+    constructor(previousHash, transactions) {
+        this.previousHash = previousHash;
+        this.transactions = transactions;
+        this.timestamp = Date.now();
+        this.nonce = 0;
+        this.hash = this.calculateHash();
     }
 
     /**
-     * Add a transaction to the transaction pool.
-     * @param {Object} transaction - The transaction to add.
+     * Calculate the hash of the block.
+     * @returns {string} - The hash of the block.
      */
-    addTransaction(transaction) {
-        try {
-            if (this.isValidTransaction(transaction) && this.transactions.length < this.maxPoolSize) {
-                this.transactions.push(transaction);
-            } else {
-                throw new Error('Invalid transaction or transaction pool is full');
-            }
-        } catch (error) {
-            console.error('Error adding transaction:', error.message);
-            throw error;
+    calculateHash() {
+        // Hashing algorithm (e.g., SHA-256)
+        return crypto.createHash('sha256').update(JSON.stringify(this)).digest('hex');
+    }
+
+    /**
+     * Mine the block by finding a valid hash.
+     * @param {number} difficulty - The mining difficulty level.
+     */
+    mineBlock(difficulty) {
+        while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join("0")) {
+            this.nonce++;
+            this.hash = this.calculateHash();
         }
-    }
-
-    /**
-     * Validate a transaction.
-     * @param {Object} transaction - The transaction to validate.
-     * @returns {boolean} - True if the transaction is valid, false otherwise.
-     */
-    isValidTransaction(transaction) {
-        // Implement transaction validation logic (e.g., signature verification, fund availability check)
-        // Return true if the transaction is valid, false otherwise
-        return true;
-    }
-
-    /**
-     * Prioritize transactions in the transaction pool.
-     */
-    prioritizeTransactions() {
-        // Sort transactions based on priority criteria (e.g., transaction fee, waiting time)
-        this.transactions.sort((a, b) => b.fee - a.fee); // Example: prioritize transactions with higher fees
-    }
-
-    /**
-     * Remove confirmed transactions from the transaction pool.
-     * @param {Object} block - The confirmed block containing transactions to remove.
-     */
-    removeConfirmedTransactions(block) {
-        // Remove transactions included in the confirmed block from the pool
-        const confirmedTransactionIds = block.transactions.map(tx => tx.id);
-        this.transactions = this.transactions.filter(tx => !confirmedTransactionIds.includes(tx.id));
-    }
-
-    /**
-     * Evict stale transactions from the transaction pool.
-     */
-    evictStaleTransactions() {
-        // Remove transactions from the pool that have been pending for too long
-        const currentTime = Date.now();
-        const MAX_PENDING_TIME = 24 * 60 * 60 * 1000; // Maximum pending time: 24 hours
-        this.transactions = this.transactions.filter(tx => (currentTime - tx.timestamp) < MAX_PENDING_TIME);
-    }
-
-    /**
-     * Broadcast pending transactions to network nodes for propagation.
-     * @param {Network} network - The network object used for broadcasting transactions.
-     */
-    broadcastTransactions(network) {
-        // Broadcast pending transactions to network nodes for propagation
-        network.broadcast(this.transactions);
+        console.log("Block mined: " + this.hash);
     }
 }
+
+// Define the Blockchain class
+class Blockchain {
+    /**
+     * Create a new instance of Blockchain.
+     */
+    constructor() {
+        this.chain = [this.createGenesisBlock()];
+        this.difficulty = 4; // Adjust the difficulty level as needed
+        this.pendingTransactions = [];
+        this.miningReward = 100; // Reward for mining a new block
+    }
+
+    /**
+     * Create the genesis block.
+     * @returns {Block} - The genesis block.
+     */
+    createGenesisBlock() {
+        return new Block("0", []);
+    }
+
+    /**
+     * Get the latest block in the blockchain.
+     * @returns {Block} - The latest block.
+     */
+    getLatestBlock() {
+        return this.chain[this.chain.length - 1];
+    }
+
+    /**
+     * Add a new transaction to the pending transactions.
+     * @param {Transaction} transaction - The transaction to add.
+     */
+    createTransaction(transaction) {
+        this.pendingTransactions.push(transaction);
+    }
+
+    /**
+     * Mine pending transactions into a new block.
+     * @param {string} miningRewardAddress - The address to send the mining reward to.
+     */
+    minePendingTransactions(miningRewardAddress) {
+        const rewardTransaction = new Transaction(null, miningRewardAddress, this.miningReward);
+        this.pendingTransactions.push(rewardTransaction);
+
+        const block = new Block(this.getLatestBlock().hash, this.pendingTransactions);
+        block.mineBlock(this.difficulty);
+
+        console.log("Block successfully mined!");
+        this.chain.push(block);
+
+        this.pendingTransactions = [];
+    }
+
+    /**
+     * Check if the blockchain is valid.
+     * @returns {boolean} - True if valid, false otherwise.
+     */
+    isChainValid() {
+        for (let i = 1; i < this.chain.length; i++) {
+            const currentBlock = this.chain[i];
+            const previousBlock = this.chain[i - 1];
+
+            if (currentBlock.hash !== currentBlock.calculateHash()) {
+                return false;
+            }
+
+            if (currentBlock.previousHash !== previousBlock.hash) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+// Define the Block class
+class Block {
+    /**
+     * Create a new block.
+     * @param {string} previousHash - The hash of the previous block.
+     * @param {Array} transactions - The list of transactions included in the block.
+     */
+    constructor(previousHash, transactions) {
+        this.previousHash = previousHash;
+        this.transactions = transactions;
+        this.timestamp = Date.now();
+        this.nonce = 0;
+        this.hash = this.calculateHash();
+    }
+
+    /**
+     * Calculate the hash of the block.
+     * @returns {string} - The hash of the block.
+     */
+    calculateHash() {
+        // Hashing algorithm (e.g., SHA-256)
+        return crypto.createHash('sha256').update(JSON.stringify(this)).digest('hex');
+    }
+
+    /**
+     * Mine the block by finding a valid hash.
+     * @param {number} difficulty - The mining difficulty level.
+     */
+    mineBlock(difficulty) {
+        while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join("0")) {
+            this.nonce++;
+            this.hash = this.calculateHash();
+        }
+        console.log("Block mined: " + this.hash);
+    }
+}
+
+// Define the Blockchain class
+class Blockchain {
+    /**
+     * Create a new instance of Blockchain.
+     */
+    constructor() {
+        this.chain = [this.createGenesisBlock()];
+        this.difficulty = 4; // Adjust the difficulty level as needed
+        this.pendingTransactions = [];
+        this.miningReward = 100; // Reward for mining a new block
+    }
+
+    /**
+     * Create the genesis block.
+     * @returns {Block} - The genesis block.
+     */
+    createGenesisBlock() {
+        return new Block("0", []);
+    }
+
+    /**
+     * Get the latest block in the blockchain.
+     * @returns {Block} - The latest block.
+     */
+    getLatestBlock() {
+        return this.chain[this.chain.length - 1];
+    }
+
+    /**
+     * Add a new transaction to the pending transactions.
+     * @param {Transaction} transaction - The transaction to add.
+     */
+    createTransaction(transaction) {
+        this.pendingTransactions.push(transaction);
+    }
+
+    /**
+     * Mine pending transactions into a new block.
+     * @param {string} miningRewardAddress - The address to send the mining reward to.
+     */
+    minePendingTransactions(miningRewardAddress) {
+        const rewardTransaction = new Transaction(null, miningRewardAddress, this.miningReward);
+        this.pendingTransactions.push(rewardTransaction);
+
+        const block = new Block(this.getLatestBlock().hash, this.pendingTransactions);
+        block.mineBlock(this.difficulty);
+
+        console.log("Block successfully mined!");
+        this.chain.push(block);
+
+        this.pendingTransactions = [];
+    }
+
+    /**
+     * Check if the blockchain is valid.
+     * @returns {boolean} - True if valid, false otherwise.
+     */
+    isChainValid() {
+        for (let i = 1; i < this.chain.length; i++) {
+            const currentBlock = this.chain[i];
+            const previousBlock = this.chain[i - 1];
+
+            if (currentBlock.hash !== currentBlock.calculateHash()) {
+                return false;
+            }
+
+            if (currentBlock.previousHash !== previousBlock.hash) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+// Define the Transaction class
+class Transaction {
+    /**
+     * Create a new transaction.
+     * @param {string} sender - The address of the sender.
+     * @param {string} recipient - The address of the recipient.
+     * @param {number} amount - The amount of the transaction.
+     */
+    constructor(sender, recipient, amount) {
+        this.sender = sender;
+        this.recipient = recipient;
+        this.amount = amount;
+    }
+}
+
+// Instantiate the Blockchain
+const coinmaker = new Blockchain();
+
+// Example usage: Create transactions and mine blocks
+coinmaker.createTransaction(new Transaction('sender1', 'recipient1', 50));
+coinmaker.createTransaction(new Transaction('sender2', 'recipient2', 100));
+
+console.log("\nStarting the mining process...");
+coinmaker.minePendingTransactions('minerAddress');
+
+console.log("\nMining reward sent to minerAddress:");
+console.log(coinmaker.chain);
+
 
 // Define the Network class
 class Network {
